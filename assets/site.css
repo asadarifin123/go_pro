@@ -1,0 +1,25 @@
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  /* font-size: 14px; */
+  line-height: 1.42857143;
+  color: #555;
+  background-color: #fff;
+}
+
+footer {
+  background: #34495e none repeat scroll 0 0;
+  padding: 25px 0 15px 0;
+  width: 100%;
+  position: absolute;
+  text-align: center;
+  color: #fff;
+  bottom: 0;
+}
+
+.navbar-nav {
+  right: 0;
+}
+
+/* .center {
+  vertical-align: middle;
+} */
