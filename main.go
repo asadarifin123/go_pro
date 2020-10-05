@@ -1,41 +1,78 @@
 package main
 
 import (
-	"fmt"
+	"html/template"
+	"io"
 	"net/http"
-	"text/template"
+
+	"github.com/labstack/echo"
 )
 
 type M map[string]interface{}
 
-func main() {
-	var tmpl, err = template.ParseGlob("views/*")
-	if err != nil {
-		panic(err.Error())
-		return
+type Renderer struct {
+	template *template.Template
+	debug    bool
+	location string
+}
+
+func NewRenderer(location string, debug bool) *Renderer {
+	tpl := new(Renderer)
+	tpl.location = location
+	tpl.debug = debug
+
+	tpl.ReloadTemplates()
+
+	return tpl
+}
+
+func (t *Renderer) ReloadTemplates() {
+	t.template = template.Must(template.ParseGlob(t.location))
+}
+
+func (t *Renderer) Render(
+	w io.Writer,
+	name string,
+	data interface{},
+	c echo.Context,
+
+) error {
+	if t.debug {
+		t.ReloadTemplates()
 	}
 
-	http.HandleFunc("/index", func(w http.ResponseWriter, r *http.Request) {
-		var data = M{"name": "Batman"}
-		err = tmpl.ExecuteTemplate(w, "index", data)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+	return t.template.ExecuteTemplate(w, name, data)
+}
+
+//func (io.Writer, string, interface{}, echo.Context) error
+
+func main() {
+
+	e := echo.New()
+
+	e.Static("/static", "assets")
+
+	e.Renderer = NewRenderer("views/*.html", true)
+
+	e.GET("/index", func(c echo.Context) error {
+		data := M{"message": "HOME"}
+		return c.Render(http.StatusOK, "index.html", data)
 	})
 
-	http.HandleFunc("/about", func(w http.ResponseWriter, r *http.Request) {
-		var data = M{"name": "Batman"}
-		err = tmpl.ExecuteTemplate(w, "about", data)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
+	e.GET("/login", func(c echo.Context) error {
+		data := M{"message": "LOGIN"}
+		return c.Render(http.StatusOK, "login.html", data)
 	})
 
-	http.Handle("/static/",
-		http.StripPrefix("/static/",
-			http.FileServer(
-				http.Dir("assets"))))
+	e.GET("/postmortem", func(c echo.Context) error {
+		data := M{"message": "POSTMORTEM"}
+		return c.Render(http.StatusOK, "postmortem.html", data)
+	})
 
-	fmt.Println("server start at :9000")
-	http.ListenAndServe(":9000", nil)
+	e.GET("/dashboard", func(c echo.Context) error {
+		data := M{"message": "DASHBOARD"}
+		return c.Render(http.StatusOK, "dashboard.html", data)
+	})
+
+	e.Logger.Fatal(e.Start(":9000"))
 }
